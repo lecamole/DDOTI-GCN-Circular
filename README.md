@@ -1,8 +1,8 @@
 # DDOTI-GCN-Circular
 Code for creating the GCN circular of a DDOTI-Fermi GBR observation
 
-It's only necessary to specify the date of the day when there was a DDOTI observation from a Fermi/GBM alert.
-You will also need credentials to access the DDOTI Pipeline webpage.
+It's only necessary to specify the date of the DDOTI observation of a Fermi GBM alert.
+You will also need the GCN circular template and the credentials to access the DDOTI Pipeline webpage.
 
 ## A Quick Example
 To obtain the circular for a DDOTI observation on Feb 1st 2021:
@@ -10,7 +10,8 @@ To obtain the circular for a DDOTI observation on Feb 1st 2021:
 from DDOTI_GCN import gcn_report
 gcn_report('20210201')
 ```
-It will print information about the Fermi trigger and the DDOTI observation, as well as the name of the GCN circular file created:
+You will need to type the user and the password to access the pipeline.
+It will print information about the Fermi trigger and the DDOTI observation, which is the same data that is added to the template; as well as the name of the GCN circular file created:
 ```
 Fermi info
 
