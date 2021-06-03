@@ -83,14 +83,19 @@ def gcn_report(Date):
             break
     
     #Obtains the list of DDOTI observations that correspond to a Fermi GBM trigger
-    trignum=[]
-    ddoti_data=[]
+    trignum=[] #empty list for the Fermi triggers
+    ddoti_data=[] #empty list for the ddoti id
     for num, line in enumerate(obs,0):
-        if '1002' in line: 
+        if '1002' in line: #1002 is the Fermi ID used in the DDOTI pipeline
             fermi_obs=obs[num].split('/')
             ddoti_data.append(fermi_obs[0])
             trignum.append(fermi_obs[1])
-    
+            
+    #Stops if there are no DDOTI observations with a Fermi ID
+    if any(trignum) != True: #checks if the trignum list is empty
+        print(Date[:-1])
+        print('No observations with a Fermi ID on that date.')
+        return
     
     def bitacora_fermi():
         '''
@@ -98,7 +103,7 @@ def gcn_report(Date):
 
         Returns
         -------
-        df : Dataframe with all of the Fermi GBR alerts since 09/2019.
+        df : Dataframe with all of the Fermi GBR alerts since Sept 2019.
 
         '''
         #Retrieve html page
@@ -137,7 +142,7 @@ def gcn_report(Date):
         #Create data frame of data
         Dict = {title:column for (title,column) in col}
         df = pd.DataFrame(Dict)
-        #drop Comments column and all events before Sept 19th 2009
+        #drop Comments column and all events before Sept 1st 2019
         df = df.drop('Comments',axis=1)
         df.drop(df[df['Date'] < '19/09/01'].index, inplace = True)
         #reverse index so most recent trigger have bigger indexes
@@ -241,7 +246,6 @@ def gcn_report(Date):
                 #searches for MOST LIKELY in each of the lines in notice, 
                 #stops once it finds it
                 if 'MOST_LIKELY:' in line:
-                    
                     (tmp) = line.split(':  ')
                     event = tmp[1]
                     break
@@ -260,7 +264,7 @@ def gcn_report(Date):
                     grb=grb.rstrip('.')
                     grb=grb[1:-4]
                     break
-        #if no 'MOST LIKELY' in doc, it adds a NO EVENT to the event list            
+        #if no 'This is likely' in doc, it adds a NO DATA to the grb type list            
         else:
             grb='NO DATA'
             
