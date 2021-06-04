@@ -1,72 +1,96 @@
 # -*- coding: utf-8 -*-
 """
-Created on Tue May 18 18:16:12 2021
-
 @author: lecamole
 """
 
+import getpass
+import shutil
 import requests
 import lxml.html as lh
-import getpass
 import pandas as pd
 from astropy.time import Time
-import shutil
 
-'''
-
-'''
-def gcn_report(Date):
+def lines(data,delimiter):
     '''
-    Takes the date of a DDOTI observation of a Fermi GBM event and 
-    returns the GCN circular text file of said event.
+    Takes a string and divides it in lines according to the specified delimiter,
+    creating a list of strings. It also cleans it up of white spaces.
 
     Parameters
     ----------
-    Date : str object
-        Date when the DDOTI observation took place in the format YYYYMMDD.
+    data : str object
+        String with a certain delimiter
+    delimiter : str object
+        Character delimiting lines in the string.
 
     Returns
     -------
-    GCN_circular_DATE_triggernumber.txt: txt file
-        Text file of the GCN report for a GRB DDOTI observation.
+    lines : list
+        List of lines.
 
     '''
+    lines = (line.rstrip() for line in data)
+    lines = (line.split(delimiter, 1)[0] for line in lines)
+    lines = (line.rstrip() for line in lines)
+    lines = (line.lstrip() for line in lines)
+    lines = (line for line in lines if line)
+    lines = list(lines)
+    return lines
+
+def bitacora_fermi():
+    '''
+    Takes the table of Fermi GBRs from the webpage    
+    Returns
+    -------
+    df : Dataframe with all of the Fermi GBR alerts since Sept 2019.
+        '''
+    #Retrieve html page
+    url = 'https://gcn.gsfc.nasa.gov/fermi_grbs.html'
+    df=pd.read_html(url, header=1)[0]
+    #drop Comments column and all events before Sept 1st 2019
+    df = df.drop('Comments',axis=1)
+    df.drop(df[df['Date'] < '19/09/01'].index, inplace = True)
+    #reverse index so most recent trigger have bigger indexes
+    df = df.iloc[::-1]
+    df.iloc[:] = df.iloc[::-1].values
+    
+    return df
+    
+def timeconver(time):
+    if  60 <= time < 3600:
+        t=round(time/60,2)
+        unit='minutes'
+    elif time >= 3600:
+        t=round(time/3600,2)
+        unit='hours'
+    else:
+        t=round(time,2)
+        unit='seconds'
+    #timeunit=str(time)+' '+unit
+    return t,unit
+
+def gcn_report(Date):
+    '''
+Takes the date of a DDOTI observation of a Fermi GBM event and 
+returns the GCN circular text file of said event.
+Parameters
+----------
+Date : str object
+    Date when the DDOTI observation took place in the format YYYYMMDD.
+
+Returns
+-------
+GCN_circular_DATE_triggernumber.txt: txt file
+    Text file of the GCN report for a GBR DDOTI observation.
+
+'''
     #Asks for credentials to access the DDOTI Pipeline webpage
     u=getpass.getpass(prompt='User:')
     p=getpass.getpass(prompt='Password:')
-    auth=(u,p)
-    
-    page=requests.get('http://transients.astrossp.unam.mx/ddoti/direct.html', auth=auth)
+    page=requests.get('http://transients.astrossp.unam.mx/ddoti/direct.html', 
+                      auth=(u,p))
     doc = lh.fromstring(page.content)
     print(page,'\n')
-    archive = (doc.text_content()).split('\n')
-    
-    def lines(data,delimiter):
-        '''
-        Takes a string and divides it in lines according to the specified delimiter,
-        creating a list of strings. It also cleans it up of white spaces.
-
-        Parameters
-        ----------
-        data : str object
-            String with a certain delimiter
-        delimiter : str object
-            Character delimiting lines in the string.
-
-        Returns
-        -------
-        lines : list
-            List of lines.
-
-        '''
-        lines = (line.rstrip() for line in data)
-        lines = (line.split(delimiter, 1)[0] for line in lines)
-        lines = (line.rstrip() for line in lines)
-        lines = (line.lstrip() for line in lines)
-        lines = (line for line in lines if line)
-        lines = list(lines)
-        return lines
-    
+    archive = (doc.text_content()).split('\n')    
     archive=lines(archive,'        ')
     archive=(line.lstrip() for line in archive)
     archive=list(archive)
@@ -83,47 +107,25 @@ def gcn_report(Date):
             break
     
     #Obtains the list of DDOTI observations that correspond to a Fermi GBM trigger
-    trignum=[] #empty list for the Fermi triggers
-    ddoti_data=[] #empty list for the ddoti id
+    trignum=[]
+    ddoti_data=[]
     for num, line in enumerate(obs,0):
-        if '1002' in line: #1002 is the Fermi ID used in the DDOTI pipeline
+        if '1002' in line: 
             fermi_obs=obs[num].split('/')
             ddoti_data.append(fermi_obs[0])
             trignum.append(fermi_obs[1])
-            
-    #Stops if there are no DDOTI observations with a Fermi ID
-    if any(trignum) != True: #checks if the trignum list is empty
-        print(Date[:-1])
-        print('No observations with a Fermi ID on that date.')
-        return
     
-    def bitacora_fermi():
-        '''
-        Takes the table of Fermi GRBs from the webpage
-
-        Returns
-        -------
-        df : Dataframe with all of the Fermi GRB alerts since Sept 2019.
-
-        '''
-        #Retrieve html page
-        url = 'https://gcn.gsfc.nasa.gov/fermi_grbs.html'
-        df=pd.read_html(url, header=1)[0]
-        #drop Comments column and all events before Sept 1st 2019
-        df = df.drop('Comments',axis=1)
-        df.drop(df[df['Date'] < '19/09/01'].index, inplace = True)
-        #reverse index so most recent trigger have bigger indexes
-        df = df.iloc[::-1]
-        df.iloc[:] = df.iloc[::-1].values
-        
-        return df
-        
+    if any(trignum) is not True:
+        print(Date[:-1])
+        print('No Fermi ID on that date.')
+        return
+            
     bit=bitacora_fermi()
     bit=bit.drop_duplicates('TrigNum',keep='first')
     
     for num,line in enumerate(trignum,0):        
         url='http://transients.astrossp.unam.mx/ddoti/'+datee+'/'+ddoti_data[0]+'/'+trignum[num]+'/'
-        page_visits=requests.get(url,auth=auth)
+        page_visits=requests.get(url,auth=(u,p))
         #print(url)
         doc_visits = lh.fromstring(page_visits.content)  
         visits = (doc_visits.text_content()).split('\n')
@@ -154,7 +156,7 @@ def gcn_report(Date):
         msg_type=bit.loc[bit['TrigNum'] == int(trignum[num]), 'MesgTypeGBMLAT'].iloc[0]
         msg_type=msg_type[4:]
         
-        '''ddoti times'''
+        #ddoti times
         #date
         ddate=visit[0][visit[0].index('_')+1:visit[0].index('T')]
         ddate=ddate[0:4]+'-'+ddate[4:6]+'-'+ddate[6:8]
@@ -180,7 +182,7 @@ def gcn_report(Date):
         elif grid == 6:
             url=url+'5/current_C0.html'
             
-        page_endtime=requests.get(url,auth=auth)
+        page_endtime=requests.get(url,auth=(u,p))
         #print(url,'\n')
         doc_endtime = lh.fromstring(page_endtime.content)  
         endtime = (doc_endtime.text_content()).split('\n\n')[1]
@@ -189,7 +191,7 @@ def gcn_report(Date):
         endtime= ddate+' '+endtime
         endtime=Time(endtime,scale='ut1')
                 
-        '''fermi times'''
+        #fermi times
         datte=bit.loc[bit['TrigNum'] == int(trignum[num]), 'Date'].iloc[0]
         datte=datte.replace('/','-')
         datte='20'+datte
@@ -198,8 +200,6 @@ def gcn_report(Date):
         trigtime=datte+' '+trigtime
         trigtime=Time(trigtime,scale='ut1')
         
-    
-        
         url_fermi = 'https://gcn.gsfc.nasa.gov/other/' + trignum[num] + '.fermi'
         page_fermi = requests.get(url_fermi)
         doc_fermi = lh.fromstring(page_fermi.content)
@@ -207,18 +207,19 @@ def gcn_report(Date):
         doc_fermi=doc_fermi.text_content()
         notice_fermi=lines(notice_fermi,'///')
         
-        if 'MOST_LIKELY:' in doc_fermi:
-        #runs through all the lines in notice
-            for idx,line in enumerate(notice_fermi, 0):
-                #searches for MOST LIKELY in each of the lines in notice, 
-                #stops once it finds it
-                if 'MOST_LIKELY:' in line:
-                    (tmp) = line.split(':  ')
-                    event = tmp[1]
-                    break
-        #if no 'MOST LIKELY' in doc, it adds a NO EVENT to the event list            
-        else:
-            event='no event specified'
+        # if 'MOST_LIKELY:' in doc_fermi:
+        # #runs through all the lines in notice
+        #     for idx,line in enumerate(notice_fermi, 0):
+        #         #searches for MOST LIKELY in each of the lines in notice, 
+        #         #stops once it finds it
+        #         if 'MOST_LIKELY:' in line:
+                    
+        #             (tmp) = line.split(':  ')
+        #             event = tmp[1]
+        #             break
+        # #if no 'MOST LIKELY' in doc, it adds a NO EVENT to the event list            
+        # else:
+        #     event='no event specified'
     
         if 'This is likely' in doc_fermi:
         #runs through all the lines in notice
@@ -231,25 +232,11 @@ def gcn_report(Date):
                     grb=grb.rstrip('.')
                     grb=grb[1:-4]
                     break
-        #if no 'This is likely' in doc, it adds a NO DATA to the grb type list            
+        #if no 'MOST LIKELY' in doc, it adds a NO EVENT to the event list            
         else:
             grb='NO DATA'
             
-        
-        '''time deltas'''
-        
-        def timeconver(time):
-            if time >= 60 and time < 3600:
-                time=round(time/60,2)
-                unit='minutes'
-            elif time > 3600:
-                time=round(time/3600,2)
-                unit='hours'
-            else:
-                time=round(time,2)
-                unit='seconds'
-            #timeunit=str(time)+' '+unit
-            return time,unit
+        #time deltas
         
         #dotti start time minus trigger time
         trigdelta=startime - trigtime
@@ -269,7 +256,7 @@ def gcn_report(Date):
         print('Fermi info\n')
         print('Trigger number:', trignum[num])
         print('Trigger time:',trigtime, 'UT')
-        print('Event type:', grb+' GBR' )
+        print('Event type:', grb + ' GBR' )
         print('Message type:', msg_type,'\n')
         
         print('DDOTI info\n')
@@ -281,7 +268,8 @@ def gcn_report(Date):
         print('Exp time [sec]:',exp_min,',',exp_max)
         print('Magnitude range (w):',w,'\n')
         
-        file=shutil.copy('GCN_circular_template.txt', 'GCN_circular'+'_'+ddate+'_'+trignum[num]+'.txt')
+        file=shutil.copy('GCN_circular_template.txt', 
+                         'GCN_circular'+'_'+ddate+'_'+trignum[num]+'.txt')
         print(file)
         print('\n////////////////////////////////////////////\n')
         
@@ -303,7 +291,3 @@ def gcn_report(Date):
             text=text.replace('TYPE',grb)
             circular.seek(0)
             circular.write(text)
-            
-        
-
-
