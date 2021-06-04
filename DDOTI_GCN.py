@@ -151,7 +151,7 @@ def gcn_report(Date):
         exp_min=min(exptime)
         exp_max=max(exptime)
         
-        msg_type=bit.loc[bit['TrigNum'] == trignum[num], 'MesgTypeGBMLAT'].iloc[0]
+        msg_type=bit.loc[bit['TrigNum'] == int(trignum[num]), 'MesgTypeGBMLAT'].iloc[0]
         msg_type=msg_type[4:]
         
         '''ddoti times'''
@@ -190,10 +190,10 @@ def gcn_report(Date):
         endtime=Time(endtime,scale='ut1')
                 
         '''fermi times'''
-        datte=bit.loc[bit['TrigNum'] == trignum[num], 'Date'].iloc[0]
+        datte=bit.loc[bit['TrigNum'] == int(trignum[num]), 'Date'].iloc[0]
         datte=datte.replace('/','-')
         datte='20'+datte
-        trigtime=bit.loc[bit['TrigNum'] == trignum[num], 'Time UT'].iloc[0]
+        trigtime=bit.loc[bit['TrigNum'] == int(trignum[num]), 'Time UT'].iloc[0]
         trigtime=trigtime[:-3]
         trigtime=datte+' '+trigtime
         trigtime=Time(trigtime,scale='ut1')
