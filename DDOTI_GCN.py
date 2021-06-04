@@ -108,40 +108,7 @@ def gcn_report(Date):
         '''
         #Retrieve html page
         url = 'https://gcn.gsfc.nasa.gov/fermi_grbs.html'
-        page = requests.get(url)
-        doc = lh.fromstring(page.content)
-        tr_elements = doc.xpath('//tr')
-        
-        #retrieve column names
-        col = []
-        i = 0
-        for t in tr_elements[1]:
-            i += 1
-            name = t.text_content()
-            #print ('%d:"%s"'%(i, name))
-            col.append((name, []))
-        
-        #retrieve column data    
-        for j in range(2,len(tr_elements)):
-            T = tr_elements[j]
-            
-            if len(T)!=8:
-                break
-            i=0
-            for t in T.iterchildren():
-                data = t.text_content() 
-                if i > 0:
-                    try:
-                        data = int(data)
-                    except:
-                        pass
-                    
-                col[i][1].append(data)
-                i += 1
-        
-        #Create data frame of data
-        Dict = {title:column for (title,column) in col}
-        df = pd.DataFrame(Dict)
+        df=pd.read_html(url, header=1)[0]
         #drop Comments column and all events before Sept 1st 2019
         df = df.drop('Comments',axis=1)
         df.drop(df[df['Date'] < '19/09/01'].index, inplace = True)
