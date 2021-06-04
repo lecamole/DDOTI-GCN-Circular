@@ -17,7 +17,7 @@ It will print information about the Fermi trigger and the DDOTI observation, whi
 > 
 > Trigger number: 012345678  
 > Trigger time: 2021-02-01 01:02:03.000 UT  
-> Event type: Long GBR  
+> Event type: Long GRB  
 > Message type: Final Position  
 >   
 > DDOTI info  
