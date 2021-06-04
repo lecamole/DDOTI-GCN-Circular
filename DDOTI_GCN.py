@@ -28,7 +28,7 @@ def gcn_report(Date):
     Returns
     -------
     GCN_circular_DATE_triggernumber.txt: txt file
-        Text file of the GCN report for a GBR DDOTI observation.
+        Text file of the GCN report for a GRB DDOTI observation.
 
     '''
     #Asks for credentials to access the DDOTI Pipeline webpage
@@ -99,11 +99,11 @@ def gcn_report(Date):
     
     def bitacora_fermi():
         '''
-        Takes the table of Fermi GBRs from the webpage
+        Takes the table of Fermi GRBs from the webpage
 
         Returns
         -------
-        df : Dataframe with all of the Fermi GBR alerts since Sept 2019.
+        df : Dataframe with all of the Fermi GRB alerts since Sept 2019.
 
         '''
         #Retrieve html page
