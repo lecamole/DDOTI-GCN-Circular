@@ -106,7 +106,7 @@ GCN_circular_DATE_triggernumber.txt: txt file
             obs=list(obs)
             break
     
-    #Obtains the list of DDOTI observations that correspond to a Fermi GBM trigger
+    #Obtains the list of DDOTI observationswith a Fermi ID (1002)
     trignum=[]
     ddoti_data=[]
     for num, line in enumerate(obs,0):
