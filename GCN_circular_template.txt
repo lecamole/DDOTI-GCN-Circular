@@ -1,7 +1,13 @@
+
 We observed the field of the likely TYPE Fermi GRB XXXX  (trigger TRIGNUM, GCN #XXXX, Fermi GBM Team) with the DDOTI/OAN wide-field imager at the Observatorio Astronómico Nacional on Sierra San Pedro Mártir ( http://ddoti.astroscu.unam.mx) on DATE from START to END UTC (STARTRIG to ENDTRIG after the event).
 
-We observed a region of RAREG degrees in RA by DECREG degrees in DEC, with a GRIDSIZE grid, centered on the Fermi GBM MSGTYPE RA: RIGHTAS, DEC: DECLI (J2000 degrees). This region contains INST instrumental fields or about TOTFIELD square degrees. We obtained MIN_exptime to MAX_exptime seconds of exposure per instrumental field in the w filter. We obtained AB photometry by calibration against the APASS catalog.
+We observed a region of RA_REG degrees in RA by DEC_REG degrees in declination, with a GRID_SIZE grid, centered on the Fermi GBM MSGTYPE RA: RIGHTAS, DEC: DECLI (J2000 degrees). This region contains INST instrumental fields or about TOT_FIELD square degrees. We obtained MIN_exptime to MAX_exptime seconds of exposure per instrumental field in the w filter. We obtained AB photometry by calibration against the APASS catalog.
 
 We detect no fading sources, likely candidates for the afterglow to our 10-sigma upper limits of w = MAGmin to MAGmax (inter-quartile).
 
+We detect an uncatalogued source at AR DEC that fades at the XX sigma level from w = XX to YY. Specifically, it fades as a power-law in time since trigger with an index of -0.53 +/- .23.
+
+We suggest that it might be the optical counterpart of the GRB and encourage further observations.
+
 We thank the staff of the Observatorio Astronómico Nacional in San Pedro Mártir.
+
