@@ -170,17 +170,17 @@ GCN_circular_DATE_triggernumber.txt: txt file
         grid=len(visit)/6
         
         if  grid == 1:
-            url=url+'0/current_C0.html'
+            url += '0/current_C0.html'
         elif grid == 2:
-            url=url+'1/current_C0.html'
+            url += '1/current_C0.html'
         elif grid == 3:
-            url=url+'2/current_C0.html'
+            url += '2/current_C0.html'
         elif grid == 4:
-            url=url+'3/current_C0.html'
+            url += url+'3/current_C0.html'
         elif grid == 5:
-            url=url+'4/current_C0.html'
+            url += '4/current_C0.html'
         elif grid == 6:
-            url=url+'5/current_C0.html'
+            url += '5/current_C0.html'
             
         page_endtime=requests.get(url,auth=(u,p))
         #print(url,'\n')
