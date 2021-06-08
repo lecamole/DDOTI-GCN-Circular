@@ -26,7 +26,10 @@ It will print information about the Fermi trigger and the DDOTI observation, whi
 > DDOTI end: 2021-02-01 07:08:09.000 UT  
 > Difference trigger to DDOTI start: 1.23 minutes  
 > Observation time: 12.3 minutes  
-> Center [ra, dec]: 123.456 , -78.910000  
+> Center [ra, dec]: 123.456 , -78.910000
+> Grid size: 3 x 2
+> Region size [ra, dec]: 20.4 , 20.4
+> Instrumental fields: 6 (400 deg)  
 > Exp time [sec]: 111.1 , 222.2  
 > Magnitude range (w): 12.34 - 56.78  
 > 
