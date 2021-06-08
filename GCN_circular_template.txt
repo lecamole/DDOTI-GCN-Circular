@@ -1,3 +1,6 @@
+Fermi GRB XXXXX: DDOTI Upper Limits on the Afterglow
+
+Margarita Pereyra (UNAM), Nat Butler (ASU), Alan M. Watson (UNAM), Eleonora Troja (GSFC/UMD),  Simone Dichiara (GSFC/UMD), Rosa L. Becerra (UNAM), William H. Lee (UNAM), Océlotl López,  Diego Gonzalez (UNAM), Alexander Kutyrev (GSFC/UMD), and Srihari Ravi (ASU), report:
 
 We observed the field of the likely TYPE Fermi GRB XXXX  (trigger TRIGNUM, GCN #XXXX, Fermi GBM Team) with the DDOTI/OAN wide-field imager at the Observatorio Astronómico Nacional on Sierra San Pedro Mártir ( http://ddoti.astroscu.unam.mx) on DATE from START to END UTC (STARTRIG to ENDTRIG after the event).
 
@@ -5,9 +8,10 @@ We observed a region of RA_REG degrees in RA by DEC_REG degrees in declination, 
 
 We detect no fading sources, likely candidates for the afterglow to our 10-sigma upper limits of w = MAGmin to MAGmax (inter-quartile).
 
-We detect an uncatalogued source at AR DEC that fades at the XX sigma level from w = XX to YY. Specifically, it fades as a power-law in time since trigger with an index of -0.53 +/- .23.
-
-We suggest that it might be the optical counterpart of the GRB and encourage further observations.
-
 We thank the staff of the Observatorio Astronómico Nacional in San Pedro Mártir.
 
+Optional Bits:
+
+We detect an uncatalogued source at AR, DEC that fades at the XX sigma level from w = XX to YY. Specifically, it fades as a power-law in time since trigger with an index of -0.53 +/- .23.
+
+We suggest that it might be the optical counterpart of the GRB and encourage further observations.
