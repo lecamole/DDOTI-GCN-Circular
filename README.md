@@ -11,7 +11,7 @@ from DDOTI_GCN import gcn_report
 gcn_report('20210201')
 ```
 You will need to type the user and the password to access the pipeline.  
-It will print information about the Fermi trigger and the DDOTI observation, which is the same data that is added to the template; as well as the name of the GCN circular file created:
+It will print information about the Fermi trigger and the DDOTI observation that is added to the template; as well as the filled template:
 
 > Fermi info
 > 
@@ -33,6 +33,6 @@ It will print information about the Fermi trigger and the DDOTI observation, whi
 > Exp time [sec]: 111.1 , 222.2  
 > Magnitude range (w): 12.34 - 56.78  
 > 
-> GCN_circular_2021-02-01_012345678.txt  
+> GCN_circular_2021-02-01_012345678.txt
 
 A circular will be created for each of the Fermi alert DDOTI observations available on the specified date.
