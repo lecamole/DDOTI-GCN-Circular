@@ -315,3 +315,6 @@ Text file of the GCN report for a GBR DDOTI observation.
             text=text.replace('DEC_REG',dec_reg)
             circular.seek(0)
             circular.write(text)
+            
+        print(text)
+        print('\n////////////////////////////////////////////\n') 
