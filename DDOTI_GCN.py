@@ -283,7 +283,7 @@ Text file of the GCN report for a GBR DDOTI observation.
         print('Center [ra, dec]:',center)
         print('Grid size:',grid)
         print('Region size [ra, dec]:',ra_reg,',',dec_reg)
-        print('Instrumental fields:',inst,' ('+tot_field+'deg)')
+        print('Instrumental fields:',inst,'('+tot_field+' deg)')
         print('Exp time [sec]:',exp_min,',',exp_max)
         print('Magnitude range (w):',w,'\n')
         
