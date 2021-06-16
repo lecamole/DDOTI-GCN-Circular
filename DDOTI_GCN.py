@@ -153,7 +153,8 @@ Text file of the GCN report for a GBR DDOTI observation.
         visit_df=pd.DataFrame(visit_df,columns=('Visit','#',':','File','Exposure','RA','Dec'))
         
         exptime=[line.split('/') for line in visit_df['Exposure']]
-        exptime = [item for sublist in exptime for item in sublist]
+        exptime=[item for sublist in exptime for item in sublist]
+        exptime=[float(i) for i in exptime]
         exp_min=min(exptime)
         exp_max=max(exptime)
         
