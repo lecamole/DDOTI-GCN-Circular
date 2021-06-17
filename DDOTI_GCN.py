@@ -329,7 +329,7 @@ Text file of the GCN report for a GBR DDOTI observation.
         
         print('\n////////////////////////////////////////////\n')
         
-        text='''Fermi GRB XXXXX: DDOTI Upper Limits on the Afterglow\n\n
+        text='''Fermi GRB XXXXX: DDOTI Upper Limits on the Afterglow\n
 Margarita Pereyra (UNAM), Nat Butler (ASU), Alan M. Watson (UNAM),
 Camila Angulo (UAS),  Eleonora Troja (GSFC/UMD),  Simone Dichiara (GSFC/UMD),
 Rosa L. Becerra (UNAM), William H. Lee (UNAM), Océlotl López, Diego Gonzalez (UNAM),
