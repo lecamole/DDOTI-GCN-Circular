@@ -199,7 +199,7 @@ def gcn_report(Date):
             tot_field = '150'
             ra_reg= '13.6'
             dec_reg= '10.2'
-            url_grid=url_visits+'1/current_C0.html'
+            url_grid=url_visits+'0/current_C0.html'
         elif 2 <= error < 4:
             grid='2 x 2'
             inst='4'
