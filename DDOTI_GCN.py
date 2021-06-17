@@ -164,17 +164,22 @@ Text file of the GCN report for a GBR DDOTI observation.
         
         visit=[]
         if 'Visit' in doc_visits.text_content():
-            for idx, line in enumerate(visits,0):    
+            for idx, line in enumerate(visits,0):
                 if 'Visit' in line:
                     visit.append(line)
         else:
             visit=pipeline(url_visits,u,p)
-            print('\n',Date)
-            print('\nOld redux format.')
-            print('Visits available:',len(visit['Name']))
-            print(url_visits)
-            continue
-    
+            if len(visit) > 0:
+                print('\n',Date)
+                print('\nOld redux format.')
+                print('Visits available:',len(visit['Name']))
+                print(url_visits)
+                continue
+            elif len(visit) == 0:
+                print('\n', Date)
+                print('No visits available')
+                print(url_visits)
+                return
                 
         if 'Note:' in doc_visits.text_content():
             for idx,line in enumerate(visits,0):
