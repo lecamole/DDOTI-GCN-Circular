@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 """
+Created on Tue May 18 18:16:12 2021
+
 @author: lecamole
 """
 
 import getpass
-import shutil
 import requests
 import lxml.html as lh
 import pandas as pd
@@ -107,19 +108,19 @@ def pipeline(url,u,p):
 
 def gcn_report(Date):
     '''
-    Takes the date of a DDOTI observation of a Fermi GBM event
-    and returns the GCN circular text file of said event.
-    Parameters
-    ----------
-    Date : str object
-    Date when the DDOTI observation took place in the format YYYYMMDD.
-    
-    Returns
-    -------
-    GCN_circular_DATE_triggernumber.txt: txt file
-    Text file of the GCN report for a GBR DDOTI observation.
-    
-    '''
+Takes the date of a DDOTI observation of a Fermi GBM event
+and returns the GCN circular text file of said event.
+Parameters
+----------
+Date : str object
+Date when the DDOTI observation took place in the format YYYYMMDD.
+
+Returns
+-------
+GCN_circular_DATE_triggernumber.txt: txt file
+Text file of the GCN report for a GBR DDOTI observation.
+
+'''
     #Asks for credentials to access the DDOTI Pipeline webpage
     u=getpass.getpass(prompt='User:')
     p=getpass.getpass(prompt='Password:')
@@ -131,21 +132,26 @@ def gcn_report(Date):
     
     ddoti_id=ddoti_obs[['DDOTI ID','Last Modified']][ddoti_obs['DDOTI ID'].str.contains('20')]
     ddoti_id.reset_index(drop=True,inplace=True)
-
+    
     Date=Date+'/'
     url_id = url + Date
     #ddoti_id['DDOTI ID'][ddoti_id['DDOTI ID'] == Date].iloc[0]
     #print(url_id)
     obs=pipeline(url_id, u, p)
     
-    if any(obs['Name'].str.contains('1002')):
-        index=obs[obs['Name'].str.contains('1002') == True].index[0]
+    if Date >= '20210511':
+        ID='1002'
+    else:
+        ID = '1001'
+    
+    if any(obs['Name'].str.contains(ID)):
+        index=obs[obs['Name'].str.contains(ID) == True].index[0]
         ddoti_data=obs['Name'][index]
         url_trig = url_id + ddoti_data
         trigger=pipeline(url_trig, u, p)
         
-        bit=bitacora_fermi()
-        bit=bit.drop_duplicates('TrigNum',keep='first')
+    bit=bitacora_fermi()
+    bit=bit.drop_duplicates('TrigNum',keep='first')
     
     for num,line in enumerate(trigger['Name'],0):
         trignum=(trigger['Name'][num]).strip('/')
@@ -155,19 +161,49 @@ def gcn_report(Date):
         doc_visits = lh.fromstring(page_visits.content)  
         visits = (doc_visits.text_content()).split('\n')        
         exptime=[]
+        
         visit=[]
-        for idx,line in enumerate(visits,0):
-            if 'Note:' in line:
-                center=line
-                center=center[center.index('at:')+4:]
-                center=center.strip()
-                center_ra,center_dec=center.split(' , ')
-            if 'Limiting' in line:
-                w=visits[idx]
-                w=w[w.index(': ')+2:w.index(r" (")]
-                w_min,w_max=w.split(' - ')
-            if 'Visit' in line:
-                visit.append(line)
+        if 'Visit' in doc_visits.text_content():
+            for idx, line in enumerate(visits,0):    
+                if 'Visit' in line:
+                    visit.append(line)
+        else:
+            visit=pipeline(url_visits,u,p)
+            print('\n',Date)
+            print('\nOld redux format.')
+            print('Visits available:',len(visit['Name']))
+            print(url_visits)
+            continue
+    
+                
+        if 'Note:' in doc_visits.text_content():
+            for idx,line in enumerate(visits,0):
+                if 'Note:' in line:
+                    center=line
+                    center=center[center.index('at:')+4:]
+                    center=center.strip()
+                    center_ra,center_dec=center.split(' , ')
+        else:
+            center = 'Not available'
+            center_ra,center_dec='RIGHTAS', 'DECLI'
+            
+        if 'Limiting' in doc_visits.text_content():
+            for idx,line in enumerate(visits,0):
+                if 'Limiting' in line:
+                    w=visits[idx]
+                    w=w[w.index(': ')+2:w.index(r" (")]
+                    w_min,w_max=w.split(' - ')
+        else:
+            w = 'Not available'
+            w_min,w_max='MAGmin','MAGmax'
+            
+    
+        if not any(visit):
+            print('No visits available')
+            print(url_visits)
+            #return
+            break
+            
         
         visit_df=[line.split() for line in visit]
         visit_df=pd.DataFrame(visit_df,columns=('Visit','#',':','File','Exposure','RA','Dec'))
@@ -179,7 +215,8 @@ def gcn_report(Date):
         exp_max=max(exptime)
         
         msg_type=bit.loc[bit['TrigNum'] == int(trignum), 'MesgTypeGBMLAT'].iloc[0]
-        msg_type=msg_type[4:]        
+        #msg_type=msg_type[4:]        
+    
         #ddoti times
         #date
         ddate=visit[0][visit[0].index('_')+1:visit[0].index('T')]
@@ -193,27 +230,27 @@ def gcn_report(Date):
         
         error=bit.loc[bit['TrigNum'] == int(trignum), 'Error[deg][arcmin]'].iloc[0]
         
-        if error < 2:
+        if error < 2 or 'LAT' in msg_type:
             grid='2 x 1'
             inst='2'
             tot_field = '150'
             ra_reg= '13.6'
             dec_reg= '10.2'
-            url_grid=url_visits+'0/current_C0.html'
+            url_grid=url_visits+'0/current_C1.html'
         elif 2 <= error < 4:
             grid='2 x 2'
             inst='4'
             tot_field = '300'
             ra_reg= '13.6'
             dec_reg= '20.4'
-            url_grid=url_visits+'3/current_C0.html'
+            url_grid=url_visits+'3/current_C1.html'
         elif error >= 4:
             grid='3 x 2'
             inst='6'
             tot_field = '400'
             ra_reg= '20.4'
             dec_reg= '20.4'
-            url_grid=url_visits+'5/current_C0.html'
+            url_grid=url_visits+'5/current_C1.html'
                    
         page_endtime=requests.get(url_grid,auth=(u,p))
         #print(url,'\n')
@@ -238,7 +275,8 @@ def gcn_report(Date):
         notice_fermi = (doc_fermi.text_content().split('\n'))
         doc_fermi=doc_fermi.text_content()
         notice_fermi=lines(notice_fermi,'///')
-                
+        
+        
         if 'This is likely' in doc_fermi:
             #runs through all the lines in notice
             for idx,line in enumerate(notice_fermi, 0):
@@ -279,14 +317,29 @@ def gcn_report(Date):
         print('Instrumental fields:',inst,' ('+tot_field+' deg)')
         print('Exp time [sec]:',exp_min,',',exp_max)
         print('Magnitude range (w):',w,'\n')
+        print(url_visits)
         
-        file=shutil.copy('GCN_circular_template.txt', 
-                          'GCN_circular'+'_'+ddate+'_'+trignum+'.txt')
-        print(file)
+        #file=shutil.copy('GCN_circular_template.txt', 'GCN_circular'+'_'+ddate+'_'+trignum+'.txt')
+        file = 'GCN_circular'+'_'+ddate+'_'+trignum+'.txt'
+        
         print('\n////////////////////////////////////////////\n')
         
-        with open(file,'r+') as circular:
-            text=circular.read()
+        text='''Fermi GRB XXXXX: DDOTI Upper Limits on the Afterglow\n\n
+Margarita Pereyra (UNAM), Nat Butler (ASU), Alan M. Watson (UNAM),
+Camila Angulo (UAS),  Eleonora Troja (GSFC/UMD),  Simone Dichiara (GSFC/UMD),
+Rosa L. Becerra (UNAM), William H. Lee (UNAM), Océlotl López, Diego Gonzalez (UNAM),
+Alexander Kutyrev (GSFC/UMD), and Srihari Ravi (ASU), report:\n
+We observed the field of the likely TYPE Fermi GRB XXXX  (trigger TRIGNUM, GCN #XXXX, XXXX et al.) with the DDOTI/OAN wide-field imager at the Observatorio Astronómico Nacional on Sierra San Pedro Mártir (http://ddoti.astroscu.unam.mx) on DATE from START to END UTC (STARTRIG to ENDTRIG after the event).\n
+We observed a region of RA_REG degrees in RA by DEC_REG degrees in declination, with a GRID_SIZE grid, centered on the Fermi GBM MSGTYPE RA: RIGHTAS, DEC: DECLI (J2000 degrees). This region contains INST instrumental fields or about TOT_FIELD square degrees. We obtained MIN_exptime to MAX_exptime seconds of exposure per instrumental field in the w filter. We obtained AB photometry by calibration against the APASS catalog.\n
+We detect no fading sources, likely candidates for the afterglow to our 10-sigma upper limits of w = MAGmin to MAGmax (inter-quartile).\n
+We thank the staff of the Observatorio Astronómico Nacional in San Pedro Mártir.\n
+Optional Bits:\n 
+We detect an uncatalogued source at AR DEC that fades at the XX sigma level from w = XX to YY. Specifically, it fades as a power-law in time since trigger with an index of -0.53 +/- .23.\n
+We suggest that it might be the optical counterpart of the GRB and encourage further observations.\n
+'''
+        
+        with open(file,'w') as circular:
+            #text=circular.read()
             text=text.replace('TRIGNUM',trignum)
             text=text.replace('STARTRIG',str(trigdelta)+' '+unit)
             text=text.replace('ENDTRIG',str(endobs)+' '+unit_e)
@@ -308,6 +361,7 @@ def gcn_report(Date):
             text=text.replace('DEC_REG',dec_reg)
             circular.seek(0)
             circular.write(text)
-        print(text)
+        print(text,'\n')
+        print(file)
         print('\n////////////////////////////////////////////\n')
         
