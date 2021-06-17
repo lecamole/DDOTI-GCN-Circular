@@ -68,62 +68,90 @@ def timeconver(time):
     #timeunit=str(time)+' '+unit
     return t,unit
 
+def pipeline(url,u,p):
+    '''
+        Extract the DDOTI pipeline data    
+    
+        Parameters
+        ----------
+        url : str object
+            URL to the DDOTI pipeline
+        u : str object
+            Username for accesing the DDOTI pipeline
+        p : str object
+            Password for accesing the DDOTI pipeline
+    
+        Returns
+        -------
+        Data frame with the DDOTI pipeline data
+    
+    '''
+
+    page=requests.get(url,auth=(u,p))
+    doc = lh.fromstring(page.content)
+    
+    text=doc.text_content()
+    text=text.split('\n')
+    text=text[6:]
+    text=[line.split() for line in text]
+    text=[line for line in text if line]
+    columns=text[0]
+    text=text[1:-1]
+    
+    pipeline_df=pd.DataFrame(text, columns=columns[:4])
+    pipeline_df=pipeline_df.drop(pipeline_df.columns[3:],axis=1)
+    pipeline_df=pipeline_df.rename(columns={"Last": "Last Modified", "modified": "Time"})
+    pipeline_df.dropna(subset = ["Name"], inplace=True)
+    pipeline_df.reset_index(drop=True,inplace=True)
+    return pipeline_df
+
 def gcn_report(Date):
     '''
-Takes the date of a DDOTI observation of a Fermi GBM event
-and returns the GCN circular text file of said event.
-Parameters
-----------
-Date : str object
-Date when the DDOTI observation took place in the format YYYYMMDD.
-
-Returns
--------
-GCN_circular_DATE_[triggernumber].txt: txt file
-Text file of the GCN report for a GBR DDOTI observation.
-
-'''
+    Takes the date of a DDOTI observation of a Fermi GBM event
+    and returns the GCN circular text file of said event.
+    Parameters
+    ----------
+    Date : str object
+    Date when the DDOTI observation took place in the format YYYYMMDD.
+    
+    Returns
+    -------
+    GCN_circular_DATE_triggernumber.txt: txt file
+    Text file of the GCN report for a GBR DDOTI observation.
+    
+    '''
     #Asks for credentials to access the DDOTI Pipeline webpage
     u=getpass.getpass(prompt='User:')
     p=getpass.getpass(prompt='Password:')
-    page=requests.get('http://transients.astrossp.unam.mx/ddoti/direct.html',auth=(u,p))
-    doc = lh.fromstring(page.content)
-    print(page,'\n')
-    archive = (doc.text_content()).split('\n')    
-    archive=lines(archive,'        ')
-    archive=(line.lstrip() for line in archive)
-    archive=list(archive)   
-    #Obtains the list of DDOTI observations from that date
-    Date=Date+':'
-    for num, line in enumerate(archive,0):
-        if Date in line:
-            datee=archive[num].rstrip(':')
-            obs=archive[num+1]
-            obs=obs.split('     ')
-            obs=(line.lstrip() for line in obs)
-            obs=list(obs)
-            break
-    #Obtains the list of DDOTI observations that correspond to a Fermi GBM trigger
-    trignum=[]
-    ddoti_data=[]
-    for num, line in enumerate(obs,0):
-        if '1002' in line: 
-            fermi_obs=obs[num].split('/')
-            ddoti_data.append(fermi_obs[0])
-            trignum.append(fermi_obs[1])
+    url='http://transients.astrossp.unam.mx/ddoti/'
     
-    if any(trignum) is False:
-        print(Date[:-1])
-        print('No Fermi ID on that date.')
-        return
-            
-    bit=bitacora_fermi()
-    bit=bit.drop_duplicates('TrigNum',keep='first')
+    ddoti_obs=pipeline(url,u,p)
+    ddoti_obs=ddoti_obs[['Name','Last Modified']]
+    ddoti_obs=ddoti_obs.rename(columns={"Name":"DDOTI ID"})
     
-    for num,line in enumerate(trignum,0):
-        url='http://transients.astrossp.unam.mx/ddoti/'+datee+'/'+ddoti_data[0]+'/'+trignum[num]+'/'
-        page_visits=requests.get(url, auth=(u,p))
-        #print(url)
+    ddoti_id=ddoti_obs[['DDOTI ID','Last Modified']][ddoti_obs['DDOTI ID'].str.contains('20')]
+    ddoti_id.reset_index(drop=True,inplace=True)
+
+    Date=Date+'/'
+    url_id = url + Date
+    #ddoti_id['DDOTI ID'][ddoti_id['DDOTI ID'] == Date].iloc[0]
+    #print(url_id)
+    obs=pipeline(url_id, u, p)
+    
+    if any(obs['Name'].str.contains('1002')):
+        index=obs[obs['Name'].str.contains('1002') == True].index[0]
+        ddoti_data=obs['Name'][index]
+        url_trig = url_id + ddoti_data
+        trigger=pipeline(url_trig, u, p)
+        
+        bit=bitacora_fermi()
+        bit=bit.drop_duplicates('TrigNum',keep='first')
+    
+    for num,line in enumerate(trigger['Name'],0):
+        trignum=(trigger['Name'][num]).strip('/')
+        url_visits=url_trig + trigger['Name'][num]
+        page_visits=requests.get(url_visits, auth=(u,p))
+        #print(url_visits)
         doc_visits = lh.fromstring(page_visits.content)  
         visits = (doc_visits.text_content()).split('\n')        
         exptime=[]
@@ -140,14 +168,6 @@ Text file of the GCN report for a GBR DDOTI observation.
                 w_min,w_max=w.split(' - ')
             if 'Visit' in line:
                 visit.append(line)
-                # exp=visits[idx][visits[idx].index('/')-5:visits[idx].index('/')+5]
-                # exp=exp.split('/')
-                # exptime.append(exp)
-        
-        # exptime = [item for sublist in exptime for item in sublist]
-        # exptime = [line.strip(' ') for line in exptime]
-        # exp_min=min(exptime)
-        # exp_max=max(exptime)
         
         visit_df=[line.split() for line in visit]
         visit_df=pd.DataFrame(visit_df,columns=('Visit','#',':','File','Exposure','RA','Dec'))
@@ -158,7 +178,7 @@ Text file of the GCN report for a GBR DDOTI observation.
         exp_min=min(exptime)
         exp_max=max(exptime)
         
-        msg_type=bit.loc[bit['TrigNum'] == int(trignum[num]), 'MesgTypeGBMLAT'].iloc[0]
+        msg_type=bit.loc[bit['TrigNum'] == int(trignum), 'MesgTypeGBMLAT'].iloc[0]
         msg_type=msg_type[4:]        
         #ddoti times
         #date
@@ -171,7 +191,7 @@ Text file of the GCN report for a GBR DDOTI observation.
         startime=Time(startime,scale='ut1')
         #endtime
         
-        error=bit.loc[bit['TrigNum'] == int(trignum[num]), 'Error[deg][arcmin]'].iloc[0]
+        error=bit.loc[bit['TrigNum'] == int(trignum), 'Error[deg][arcmin]'].iloc[0]
         
         if error < 2:
             grid='2 x 1'
@@ -179,37 +199,23 @@ Text file of the GCN report for a GBR DDOTI observation.
             tot_field = '150'
             ra_reg= '13.6'
             dec_reg= '10.2'
-            url=url+'1/current_C0.html'
+            url_grid=url_visits+'1/current_C0.html'
         elif 2 >= error < 4:
             grid='2 x 2'
             inst='4'
             tot_field = '300'
             ra_reg= '13.6'
             dec_reg= '20.4'
-            url=url+'3/current_C0.html'
+            url_grid=url_visits+'3/current_C0.html'
         elif error >= 4:
             grid='3 x 2'
             inst='6'
             tot_field = '400'
             ra_reg= '20.4'
             dec_reg= '20.4'
-            url=url+'5/current_C0.html'
-        
-        # grid=len(visit)/6
-        # if  grid == 1:
-        #     url=url+'0/current_C0.html'
-        # elif grid == 2:
-        #   pass            
-        # elif grid == 3:
-        #     url=url+'2/current_C0.html'
-        # elif grid == 4:
-        #   pass
-        # elif grid == 5:
-        #     url=url+'4/current_C0.html'
-        # elif grid == 6:
-            
-            
-        page_endtime=requests.get(url,auth=(u,p))
+            url_grid=url_visits+'5/current_C0.html'
+                   
+        page_endtime=requests.get(url_grid,auth=(u,p))
         #print(url,'\n')
         doc_endtime = lh.fromstring(page_endtime.content)
         endtime = (doc_endtime.text_content()).split('\n\n')[1]
@@ -219,34 +225,20 @@ Text file of the GCN report for a GBR DDOTI observation.
         endtime=Time(endtime,scale='ut1')
                 
         #fermi times
-        datte=bit.loc[bit['TrigNum'] == int(trignum[num]), 'Date'].iloc[0]
+        datte=bit.loc[bit['TrigNum'] == int(trignum), 'Date'].iloc[0]
         datte='20' + datte.replace('/','-')
-        trigtime=bit.loc[bit['TrigNum'] == int(trignum[num]), 'Time UT'].iloc[0]
+        trigtime=bit.loc[bit['TrigNum'] == int(trignum), 'Time UT'].iloc[0]
         trigtime=trigtime[:-3]
         trigtime=datte+' '+trigtime
         trigtime=Time(trigtime,scale='ut1')
         
-        url_fermi = 'https://gcn.gsfc.nasa.gov/other/' + trignum[num] + '.fermi'
+        url_fermi = 'https://gcn.gsfc.nasa.gov/other/' + trignum + '.fermi'
         page_fermi = requests.get(url_fermi)
         doc_fermi = lh.fromstring(page_fermi.content)
         notice_fermi = (doc_fermi.text_content().split('\n'))
         doc_fermi=doc_fermi.text_content()
         notice_fermi=lines(notice_fermi,'///')
-        
-        # if 'MOST_LIKELY:' in doc_fermi:
-        # #runs through all the lines in notice
-        #     for idx,line in enumerate(notice_fermi, 0):
-        #         #searches for MOST LIKELY in each of the lines in notice,
-        #         #stops once it finds it
-        #         if 'MOST_LIKELY:' in line:
-                    
-        #             (tmp) = line.split(':  ')
-        #             event = tmp[1]
-        #             break
-        # #if no 'MOST LIKELY' in doc, it adds a NO EVENT to the event list
-        # else:
-        #     event='no event specified'
-    
+                
         if 'This is likely' in doc_fermi:
             #runs through all the lines in notice
             for idx,line in enumerate(notice_fermi, 0):
@@ -272,7 +264,7 @@ Text file of the GCN report for a GBR DDOTI observation.
         endobs, unit_e = timeconver(endobs)    
         
         print('Fermi info\n')
-        print('Trigger number:', trignum[num])
+        print('Trigger number:', trignum)
         print('Trigger time:',trigtime, 'UT')
         print('Event type:', grb + ' GBR' )
         print('Message type:', msg_type,'\n')      
@@ -284,18 +276,18 @@ Text file of the GCN report for a GBR DDOTI observation.
         print('Center [ra, dec]:',center)
         print('Grid size:',grid)
         print('Region size [ra, dec]:',ra_reg,',',dec_reg)
-        print('Instrumental fields:',inst,'('+tot_field+' deg)')
+        print('Instrumental fields:',inst,' ('+tot_field+' deg)')
         print('Exp time [sec]:',exp_min,',',exp_max)
         print('Magnitude range (w):',w,'\n')
         
         file=shutil.copy('GCN_circular_template.txt', 
-                         'GCN_circular'+'_'+ddate+'_'+trignum[num]+'.txt')
+                          'GCN_circular'+'_'+ddate+'_'+trignum+'.txt')
         print(file)
         print('\n////////////////////////////////////////////\n')
         
         with open(file,'r+') as circular:
             text=circular.read()
-            text=text.replace('TRIGNUM',trignum[num])
+            text=text.replace('TRIGNUM',trignum)
             text=text.replace('STARTRIG',str(trigdelta)+' '+unit)
             text=text.replace('ENDTRIG',str(endobs)+' '+unit_e)
             text=text.replace('DATE', ddate.replace('-','/'))
@@ -316,6 +308,6 @@ Text file of the GCN report for a GBR DDOTI observation.
             text=text.replace('DEC_REG',dec_reg)
             circular.seek(0)
             circular.write(text)
-            
         print(text)
-        print('\n////////////////////////////////////////////\n') 
+        print('\n////////////////////////////////////////////\n')
+        
