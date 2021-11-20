@@ -1,5 +1,5 @@
 # DDOTI-GCN-Circular
-Code for creating the GCN circular of a DDOTI-Fermi GBR observation
+Code for creating the GCN circular of a DDOTI-Fermi GRB observation
 
 It's only necessary to specify the date of the DDOTI observation of a Fermi GBM alert.  
 You will also need the GCN circular template and the credentials to access the DDOTI Pipeline webpage.
